@@ -10,10 +10,10 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 app.set('port', (process.env.PORT || 8000));
 
-app.use(express.static(__dirname + '/public/'));
+app.use(express.static(__dirname + '/public/sh-ui/'));
 
 app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname + '/public/index.html'));
+    res.sendFile(path.join(__dirname + '/public/sh-ui/index.html'));
 })
 
 app.listen(app.get('port'), function () {
@@ -25,5 +25,6 @@ app.get('/hello', (req, res) => {
 });
 
 app.post('/post', (req, res) => {
+    console.log(req);
     res.send(graphParser.main(req.body));
 });

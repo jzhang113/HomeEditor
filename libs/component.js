@@ -1,5 +1,6 @@
 module.exports = {
     parse: function (input) {
+	console.log(input);
 	var json = JSON.parse(input);
 	var scene = new Scene();
 
