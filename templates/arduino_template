@@ -10,7 +10,7 @@
 // This memory is identical between all Arduinos, as all can be connected to each other through the Wireless Shield.
 
 
-#replaceSensors#
+#replaceGlobalSensors#
 
 
 // Define special-characters for serial transmission/reading.
@@ -54,7 +54,7 @@ Serial.begin(9600);
 
 
 
-
+#replacePinModes#
 
 
 

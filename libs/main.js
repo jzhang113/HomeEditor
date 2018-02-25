@@ -24,9 +24,21 @@ function traverse(scene) {
     var pinModes = [];
     var readData = [];
     var outputAction = "";
+
+
+    scene.inputComponents.forEach(function(input) {
+	globalSensorNames.push(input.id);
+    });
+    
     
     for (var i = 0; i < scene.arduinos.length; i++) {
 	var component = scene.arduinos[i];
+	console.log(component);
+    }
+
+    for (var i = 0; i < 
+    
+    /*
 	localSensorNames[i] = [];
 	pinModes[i] = "";
 	readData[i] = "";
@@ -61,31 +73,35 @@ function traverse(scene) {
 	    outputAction = output.name;
 	});
     }
+*/
 
     var globalSensorString = "";
     var localSensorString = [];
 
     for (var i = 0; i < scene.arduinos.length; i++) {
 	var temp = globalSensorNames[i];
-	globalSensorString += "byte " + temp.ard.name + "_" + temp.conn.other.name + " = 0\n;";
+	globalSensorString += "byte s" + temp + " = 0;\n";
+	globalSensorString += "byte o" + temp + " = 0;\n";
 
+	/*
 	localSensorString[i] = "";
 	for (var j = 0; j < localSensorNames.length; j++) {
 	    var temp2 = localSensorNames[i][j];
 	    localSensorString[i] += "byte " + "old_" + temp2.ard.name + "_" + temp2.conn.other.name + " = 0\n;";
 	}
-    }
-    
-    template = template.replace("#replaceGlobalSensors", globalSensorString);
+*/
+    }    
+
+    template = template.replace("#replaceGlobalSensors#", globalSensorString);
     
     var generated = [];
 
     for (var i = 0; i < scene.arduinos.length; i++) {
-	generated[i] = template.replace("#replaceLocalSensors", localSensorString[i]);
+	//generated[i] = template.replace("#replaceLocalSensors", localSensorString[i]);
 	generated[i] = template.replace("#replacePinModes", pinModes[i]);
-	generated[i] = template.replace("#replaceReadData#", readData[i]);
-	generated[i] = template.replace("#replaceRunAction#", outputAction);
+	//generated[i] = template.replace("#replaceReadData#", readData[i]);
+	//generated[i] = template.replace("#replaceRunAction#", outputAction);
     }
 
-    return generated;
+    return generated[0];    
 }
