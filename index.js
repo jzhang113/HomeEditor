@@ -1,7 +1,7 @@
 const express = require('express')
 const path = require("path");
 const bodyParser = require('body-parser');
-const graphParser = require('./libs/main');
+const graphParser = require(__dirname + '/libs/main');
 
 let app = express();
 
@@ -9,8 +9,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.set('port', (process.env.PORT || 8000));
-
-console.log(__dirname);
 
 app.use(express.static(__dirname + '/public/'));
 
@@ -27,5 +25,5 @@ app.get('/hello', (req, res) => {
 });
 
 app.post('/post', (req, res) => {
-    res.send('post test');
+    res.send(graphParser.main(req.body));
 });
