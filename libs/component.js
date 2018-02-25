@@ -1,40 +1,43 @@
 module.exports = {
-    parse: function (json) {
+    parse: function (text) {
 	var scene = new Scene();
+	/*
+	  json["arduinos"].forEach(function(ard) {
+	  var id = ard["id"];
+	  scene.ardIds.push(ard["id"]);
+	  scene.arduinos.push(new Component("ard_" + id, "arduino", id));
+	  });
+	*/
+	text.forEach(function(json) {
+	    var comp = new Component(json["name"], json["type"], json["id"]);
+	    
+	    json["inputs"].forEach(function(inputConn) {
+		comp.inputs.push(new Connector(inputConn["name"], inputConn["type"], true, inputConn["pinnumber"], inputConn["arduinoid"]));
+	    });
 
-	json["arduinos"].forEach(function(ard) {
-	    var id = ard["id"];
-	    scene.ardIds.push(ard["id"]);
-	    scene.arduinos.push(new Component("ard_" + id, "arduino", id));
+	    json["outputs"].forEach(function(outputConn) {
+		comp.outputs.push(new Connector(outputConn["name"], outputConn["type"], false, outputConn["pinnumber"], outputConn["arduinoid"]));
+	    });
+		
+	    scene.inputComponents.push(comp);
+
+	    /*	    
+	    json["outputs"].forEach(function(output) {
+		var comp = new Component(output["name"], output["type"], output["id"]);
+
+		output["inputs"].forEach(function(inputConn) {
+		    comp.inputs.push(new Connector(inputConn["name"], inputConn["type"], true, inputConn["pinnumber"], inputConn["arduinoid"]));
+		});
+
+		output["outputs"].forEach(function(outputConn) {
+		    comp.outputs.push(new Connector(outputConn["name"], outputConn["type"], false, outputConn["pinnumber"], outputConn["arduinoid"]));
+		});
+		
+		scene.outputComponents.push(comp);
+	    });
+*/
 	});
 	
-	json["inputs"].forEach(function(input) {
-	    var comp = new Component(input["name"], input["type"], input["id"]);
-
-	    input["inputs"].forEach(function(inputConn) {
-		comp.inputs.push(new Connector(inputConn["name"], inputConn["type"], true, inputConn["pinnumber"], inputConn["arduinoid"]));
-	    });
-
-	    input["outputs"].forEach(function(outputConn) {
-		comp.outputs.push(new Connector(outputConn["name"], outputConn["type"], false, outputConn["pinnumber"], outputConn["arduinoid"]));
-	    });
-	    
-	    scene.inputComponents.push(comp);
-	});
-
-	json["outputs"].forEach(function(output) {
-	    var comp = new Component(output["name"], output["type"], output["id"]);
-
-	    output["inputs"].forEach(function(inputConn) {
-		comp.inputs.push(new Connector(inputConn["name"], inputConn["type"], true, inputConn["pinnumber"], inputConn["arduinoid"]));
-	    });
-
-	    output["outputs"].forEach(function(outputConn) {
-		comp.outputs.push(new Connector(outputConn["name"], outputConn["type"], false, outputConn["pinnumber"], outputConn["arduinoid"]));
-	    });
-	    
-	    scene.outputComponents.push(comp);
-	});
 	/*
 	  json.forEach(function(entry) {
 	  var component = new Component(entry["name"], entry["nodeType"]);
@@ -52,9 +55,9 @@ module.exports = {
 	  scene.addComponent(component);
 	  }
 	*/
-	    
+	
 	//console.log(scene);
-	    
+	
 	return scene;
     },        
     validate: function (scene) {
@@ -136,9 +139,6 @@ module.exports = {
 	  });
 	  });
 	*/
-
-	console.log(scene.arduinos);
-	console.log(scene.arduinos[0].inputs);
 	
 	//if (!invalid) {
 	return {'status': true, 'message': scene};
@@ -172,18 +172,18 @@ function Component(name, type, id) {
     this.edges = [];
 
     /*
-    this.addInput = function(connector) {
-	this.inputs.push(connector);
-    }
+      this.addInput = function(connector) {
+      this.inputs.push(connector);
+      }
 
-    this.addOutput = function(connector) {
-	this.outputs.push(connector);
-    }
+      this.addOutput = function(connector) {
+      this.outputs.push(connector);
+      }
 
-    this.addEdge = function(edge) {
-	this.edges.push(edge);
-    }
-*/
+      this.addEdge = function(edge) {
+      this.edges.push(edge);
+      }
+    */
 }
 
 function Scene() {

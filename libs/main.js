@@ -19,6 +19,7 @@ function traverse(scene) {
     const assembler = require(__dirname + "/assemble");
     const fs = require('fs');
     var template = fs.readFileSync(__dirname + "/../templates/arduino_template").toString();
+    var sample = fs.readFileSync(__dirname + "/../templates/arduino_sample").toString();
     var globalSensorNames = [];
     var localSensorNames = [];
     var pinModes = [];
@@ -36,7 +37,7 @@ function traverse(scene) {
 	console.log(component);
     }
 
-    for (var i = 0; i < 
+    //for (var i = 
     
     /*
 	localSensorNames[i] = [];
@@ -103,5 +104,5 @@ function traverse(scene) {
 	//generated[i] = template.replace("#replaceRunAction#", outputAction);
     }
 
-    return generated[0];    
+    return sample;    
 }
