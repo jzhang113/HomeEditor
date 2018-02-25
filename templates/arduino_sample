@@ -1,0 +1,388 @@
+// ##########################################################
+//==================== TRANSPILER STEP 1. ===================
+// ##########################################################
+
+// Beginning
+
+// FILL IN ALL SENSOR DATA VARIABLES FOR ALL ARDUINOS IN MASTER MEMORY
+//
+// Note:
+// This memory is identical between all Arduinos, as all can be connected to each other through the Wireless Shield.
+
+
+#replaceGlobalSensors#
+
+
+// Define special-characters for serial transmission/reading.
+#define startMarker 254
+#define endMarker 255
+#define specialByte 253
+#define maxMessage 256 // Memory limit for Arduino
+
+//Serial output control data.
+byte bytesRecvd = 0;
+byte dataRecvdCount = 0;
+byte dataTotalSend = 1; // the number of bytes to send to PC taking account of encoded bytes. Initialize to 1 so that inital "0" write occurs, but gets reinitialized to zero when actual data is present.
+byte dataRecvd[maxMessage] = { 0 }; // Initialize to 0. Receiver only.
+byte dataSend[maxMessage] = { 0 }; // Sending variable. Transmitter only.
+byte tempReadBuffer[maxMessage] = { 0 };
+byte tempWriteBuffer[maxMessage] = { 0 };// Temp buffer used for serial writing.
+byte lastMessageSize = 0;
+byte lastRecordedByte = 0; // LAST TO:DO
+
+char lastRecordedVariableName[maxMessage] = {0};
+
+
+#define numPins 4 //Must change to reflect cardinal number of pins being read.  
+
+// Serial input control switches.
+boolean inProgress = false;
+boolean allReceived = false;
+
+
+
+
+// ##########################################################
+//==================== TRANSPILER STEP 2. FILL IN SETUP BLOCK 
+// ##########################################################
+
+void setup() {
+  
+Serial.begin(9600);
+
+// TODO: WRITE IN PIN CODES. MUST KNOW WHAT I/O ARE CONNECTED TO EACH PIN.
+
+
+
+#replacePinModes#
+
+
+
+// ## SETUP DATA FOR THIS PARTICULAR ARDUINO GOES HERE. MUST INITIALIZE PINS.
+
+
+
+
+  
+
+}
+
+
+//==================== LOOP ====================
+
+
+void loop() {
+
+  
+
+// Update device master data set.
+
+readNetworkData(); // Get network data for all other sensors
+
+readLocalData(); // Get data from local sensors
+
+
+
+// Now, with all data current,
+
+packageAndWriteLocalDataToNetwork(); // Push local variables onto network.
+// TODO: PACKAGE WRITE AND WRITE DATA. EACH LOCAL VARIABLE MUST BE PACKAGED AND THEN READ SEQUENTIALLY IN THIS FUNCTION CALL.
+
+executeUserControlBlock(); // Do what the user wants, given the data is made.
+ 
+
+}
+
+
+//==================== ARDUINO LOCAL HARDWARE FUNCTIONS ====================
+
+
+
+// ################################################################################################################
+//==================== TRANSPILER STEP 3. READ IN LOCAL SENSOR VARIABLES FOR ALL INPUT HARDWARE ATTACHED TO ARDUINO. 
+// ################################################################################################################
+//
+// Note: 
+
+void readLocalData() {
+
+
+//##sensorData1## = digitalgRead(##pin_sensorData1##)
+
+  
+}
+
+
+
+// ################################################################################################################
+//==================== TRANSPILER STEP 4. Create user control block. ==============================================
+// ################################################################################################################
+
+void executeUserControlBlock(){
+  
+}
+
+
+
+
+// -----------------
+// NETWORK FUNCTIONS
+// -----------------
+
+//==================== RECEIVER HELPER FUNCTIONS
+
+
+
+
+void readNetworkData() {
+
+     // Receives data into tempBuffer[]
+     //   saves the number of bytes that the PC said it sent - which will be in tempBuffer[1]
+     //   uses decodeHighBytes() to copy data from tempBuffer to dataRecvd[]
+     
+     // the Arduino program will use the data it finds in dataRecvd[]
+
+  if(Serial.available() > 0) {
+
+    byte x = Serial.read(); 
+    
+    // Note: Serial read will always occur in every iteration,
+    // even if receiver starts reading halfway through reading frame.
+
+    // However, only until a start marker is received will recording of actual value begin. 
+    
+    if (x == startMarker) {
+      bytesRecvd = 0;
+      inProgress = true; // Some 
+     
+    }
+
+    // Working with element 1 of serial message, which encodes size. Use this as a means of detecting faulty message. If faulty, don't commit. 
+    if (bytesRecvd == 1){
+
+        lastMessageSize = x; // Capture intended message size. If error occurs on this bit, mismatch will almost surely occur.
+       
+    }
+      
+      
+    if(inProgress) {
+      tempReadBuffer[bytesRecvd] = x; // First byte recorded is startMarker. Next byte read in on next function call, when inProgress in true. 
+      bytesRecvd ++; // tempBuffer[1] is first actual data byte. bytesRecvd always corresponds to the cardinal number of bytes received in tmpBufferRead.So traversing array from start message to end message is the calculation call in writing functions.
+    }
+
+    if (inProgress && (x == endMarker || bytesRecvd > lastMessageSize)) {
+
+      // Must receive a start marker to trigger reading. This way, and end marker by itself doesn't trigger this code.
+      // This controls the logic flow, and ignores the case of receiving an end message the first time.
+      
+      inProgress = false;
+    }
+            
+      
+      if (bytesRecvd == lastMessageSize){
+          // All bytes have been received.
+          allReceived = true;
+
+          processReceivedSerialData();
+        
+      }
+      
+      else {
+      
+        bytesRecvd = 0; // Reset, so no data is recorded.
+
+      }
+  }
+}
+
+void decodeHighBytes() {
+
+  //  Data gets saved locally to tempBuffer in getSerialData first.
+  //  However, this data will have extra bits in it for knob values greater than 253
+  //  Because each data point will be a byte, and the control values are byte values,
+  //  Extra bytes must be send when the data conflicts with the control values.
+  //
+  //  For example, 254 will always be a start character, but in order to encode 254
+  //  one can just use a special character, 253, and add another byte, as long as this
+  //  is handled both ways, this is just fine.
+  //
+  //  copies to dataRecvd[] only the data bytes i.e. excluding the marker bytes and the count byte
+  //  and converts any bytes of 253 etc into the intended numbers
+  //  Note that bytesRecvd is the total of all the bytes including the markers
+
+  for (byte n = 1; n < bytesRecvd - 1 ; n++) { // n initialized to 1 skips the start marker, -1 omits the end marker
+    byte x = tempReadBuffer[n];
+    if (x == specialByte) {
+       // debugToPC("FoundSpecialByte");
+       n++;
+       x = x + tempReadBuffer[n];
+    }
+    dataRecvd[dataRecvdCount] = x; // final data stored in dataRecvd
+    dataRecvdCount ++;
+  }
+}
+
+// ################################################################################################################
+//==================== TRANSPILER STEP 5. RECORD SERIAL DATA IN LOCAL MEMORY.
+// ################################################################################################################
+
+void processReceivedSerialData() {
+
+    // Once serial data has been received from some node on the network, this code is only relevant if the particular Arduino
+    // uses it in it's control bit. We must generate a string array of variable names. 
+
+  if (allReceived) {
+
+  // This allReceived loop guards clobbering data early.
+  // All Received is only ever-true
+
+    decodeHighBytes(); // If all data received, decode the raw serial data. Clean data now available in dataRecvd.
+
+    allReceived = false; // Reset loop guard. Only made false here and in error-read case (in earlier call) after being made true when startMessage received.
+
+    lastRecordedVariableName = getRecordedVariableName(); // Use name encoded in character string to figure out what input data was received.
+    // Use switch to conditionally update this variable.
+
+
+/*/// ### REGEX ###
+{
+
+    if(lastRecordedVariableName == %%VARIABLE_GLOBAL_NAME%%){
+// We have a match. Update the local memory with what was received in dataRecvd.
+    %VARIABLE_GLOBALE_NAME% = dataRecvd[1];
+      
+    }
+
+}
+*/
+   
+  
+   // A serial data for a given sensor variable have been successfully read. Must now assign the stream buffer to local values in memory.
+   // This runs every time, so allReceived must be added in loop guard to prevent from assigning partially received serial data.
+
+
+
+  
+    
+  }
+}
+
+String getRecordedVariableName(){
+
+  // This function gets called after clean data has already been received for a given message.
+
+  // Data structure in dataRecvd looks like:
+  // Size, Data_Byte, "VARIABLE_GLOBAL_NAME"
+
+  // We are trying to return "VARIABLE_GLOBAL_NAME"
+
+  // dataRecvdCount tells us how many bytes of clean serial data we have.
+
+  char variableNameBuffer[(dataRecvdCount - 2) + 1] = { 0 }; // Must always terminate character-strings with null. Add 1.
+
+  for(int i = 2; i < dataRecvdCount; i++){
+
+      variableNameBuffer[i - 2] = dataRecvd[i];
+ 
+  }
+
+  return String(variableNameBuffer);
+  
+}
+
+
+
+//==================== TRANSMITTER HELPER-FUNCTIONS
+
+
+
+
+
+
+// ################################################################################################################
+//==================== TRANSPILER STEP 6. Package and Write All Local Variables to Network. Must sequentially package, write. 
+// ################################################################################################################
+
+void packageAndWriteLocalDataToNetwork(){
+
+{
+
+ // Package Local Data Variable
+
+ // Note: %LOCAL_VARIABLE_NAME% resolves to the actual variable name in text.
+ // %%LOCAL_VARIABLE_NAME%% surrounds this name with quotations.
+  
+ prePackageMessageSize = 1 + 1 + %LOCAL_VARIABLE_NAME%.length(); // Get message size before adding in pre-encodeHigh bits extra bits.
+
+ dataSend[0] = calculateSizeAfterEncodeHighBytes(); // Total size of the final, encoded message.
+
+ dataSend[1] = (byte)(%%LOCAL_VARIABLE_NAME%%); // Package variable value. Must be byte.
+
+ for (int i = 2; i < %%LOCAL_VARIABLE_NAME%%.length(); i++){
+
+  dataSend[i] = %%LOCAL_VARIABLE_NAME%%.charAt(i - 2);
+ }
+ 
+
+  encodeHighBytes();
+  // Load dataSend into temp-buffer and control for transmission control characters.
+
+  sendSerialData();
+
+} // ITERATE THIS BLOCK FOR EVERY %VARIABLE_NAME% FOR LOCAL VARIABLES.
+
+  
+}
+
+
+
+void sendSerialData() {
+  
+  Serial.write(startMarker);
+  
+  for (byte n = 0; n < dataTotalSend; n++) {
+    
+    Serial.write(tempSendBuffer[n]); 
+  }
+ 
+  Serial.write(endMarker); 
+}
+
+
+
+void encodeHighBytes() {
+  // Copies to temBuffer[] all of the data in dataSend[]
+  //  and converts any bytes of 253 or more into a pair of bytes, 253 0, 253 1 or 253 2 as appropriate
+  dataTotalSend = 0;
+  for (byte n = 0; n < lastMessageSize; n++) {
+    if (dataSend[n] >= specialByte) {
+      
+      tempSendBuffer[dataTotalSend] = specialByte;
+      dataTotalSend++;
+      tempSendBuffer[dataTotalSend] = dataSend[n] - specialByte;
+      
+    }
+    else {
+      tempSendBuffer[dataTotalSend] = dataSend[n];
+    }
+    dataTotalSend++;
+  }
+
+}
+
+int calculcateSizeAfterEncodeHighBytes() {
+  // Copies to temBuffer[] all of the data in dataSend[]
+  //  and converts any bytes of 253 or more into a pair of bytes, 253 0, 253 1 or 253 2 as appropriate
+  int dataTotalSendTest = 0;
+  byte dataSendTest[prePackageMessageSize];
+  for (byte n = 0; n < prePackageMessageSize; n++) {
+    if (dataSendTest[n] >= specialByte) {
+      dataTotalSendTest++;
+      }
+    dataTotalSendTest++;
+  }
+
+  return dataTotalSendTest; 
+
+}
+
