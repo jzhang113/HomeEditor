@@ -1,10 +1,10 @@
 module.exports = {
-    parse: function (input) {
-	console.log(input);
-	var json = JSON.parse(input);
+    parse: function (json) {
+	// console.log(input);
+	// var json = JSON.parse(input);
 	var scene = new Scene();
 
-	json.forEach(function(entry) {
+	json.entries.forEach(function(entry) {
 	    var component = new Component(entry["operation"]);
 
 	    entry["input"].forEach(function(input) {
